@@ -1,7 +1,8 @@
 const API_BASE = {
   auth: 'https://functions.poehali.dev/12a78a1f-85e5-4588-a00d-14365ce0944e',
   rooms: 'https://functions.poehali.dev/a67b950c-6260-4d8c-9b86-c3c91bac111d',
-  game: 'https://functions.poehali.dev/12352cee-dc57-439a-9520-d5928b310388'
+  game: 'https://functions.poehali.dev/12352cee-dc57-439a-9520-d5928b310388',
+  chat: 'https://functions.poehali.dev/a096974e-6ff2-41c7-b82d-331a7fb04666'
 };
 
 export interface User {
@@ -118,6 +119,26 @@ export const api = {
     
     async getLeaderboard(limit = 10) {
       const response = await fetch(`${API_BASE.game}?action=leaderboard&limit=${limit}`);
+      return response.json();
+    }
+  },
+  
+  chat: {
+    async sendMessage(roomId: string, telegramId: number, message: string) {
+      const response = await fetch(API_BASE.chat, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          room_id: roomId,
+          telegram_id: telegramId,
+          message
+        })
+      });
+      return response.json();
+    },
+    
+    async getMessages(roomId: string, sinceId = 0) {
+      const response = await fetch(`${API_BASE.chat}?room_id=${roomId}&since_id=${sinceId}`);
       return response.json();
     }
   }

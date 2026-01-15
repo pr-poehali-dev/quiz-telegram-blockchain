@@ -10,6 +10,8 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import GameTimer from '@/components/GameTimer';
 import CreateRoomDialog from '@/components/CreateRoomDialog';
+import RoomsList from '@/components/RoomsList';
+import GameRoom from '@/components/GameRoom';
 import { getTelegramUser, getStartParam, initTelegramApp, shareToTelegram, hapticFeedback, mockTelegramUser, isTelegramWebApp } from '@/lib/telegram';
 import { api, User, Room } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
@@ -92,7 +94,7 @@ const questions: Question[] = [
 export default function Index() {
   const { toast } = useToast();
   const [user, setUser] = useState<User | null>(null);
-  const [currentRoom, setCurrentRoom] = useState<Room | null>(null);
+  const [currentRoomId, setCurrentRoomId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   
   const [currentQuestion, setCurrentQuestion] = useState(0);
@@ -256,10 +258,46 @@ export default function Index() {
     setNewMessage('');
   };
 
-  const handleCreateRoom = (roomId: string) => {
+  const handleCreateRoom = async (roomId: string) => {
+    hapticFeedback('success');
     toast({
       title: '✅ Комната создана!',
       description: 'Пригласите друзей для игры',
+    });
+    setCurrentRoomId(roomId);
+    if (user) {
+      await api.rooms.join(user.telegram_id, roomId);
+    }
+  };
+
+  const handleJoinRoom = async (roomId: string) => {
+    if (!user) return;
+    
+    try {
+      await api.rooms.join(user.telegram_id, roomId);
+      setCurrentRoomId(roomId);
+      hapticFeedback('success');
+      toast({
+        title: '✅ Вы в комнате!',
+        description: 'Приятной игры',
+      });
+    } catch (error) {
+      console.error('Failed to join room:', error);
+      hapticFeedback('error');
+      toast({
+        title: 'Ошибка',
+        description: 'Не удалось войти в комнату',
+        variant: 'destructive'
+      });
+    }
+  };
+
+  const handleLeaveRoom = () => {
+    setCurrentRoomId(null);
+    hapticFeedback('medium');
+    toast({
+      title: 'Вы покинули комнату',
+      description: 'Возвращайтесь снова!',
     });
   };
 
@@ -393,67 +431,19 @@ export default function Index() {
         </TabsContent>
 
         <TabsContent value="rooms" className="animate-fade-in space-y-4">
-          <div className="flex justify-between items-center">
-            <h2 className="text-2xl font-bold text-white">Игровые комнаты</h2>
-            <Button
-              onClick={() => setShowCreateRoom(true)}
-              className="bg-gradient-to-r from-[#0EA5E9] to-[#8B5CF6]"
-            >
-              <Icon name="Plus" size={20} className="mr-2" />
-              Создать
-            </Button>
-          </div>
-
-          <Card className="bg-[#1e293b] border-2 border-[#334155] p-6 text-center">
-            <div className="text-5xl mb-4">🎮</div>
-            <h3 className="text-xl font-bold text-white mb-2">Мультиплеер скоро!</h3>
-            <p className="text-gray-400 mb-4">Создавайте комнаты и играйте с друзьями</p>
-            <Button
-              onClick={() => setShowCreateRoom(true)}
-              className="bg-[#8B5CF6] hover:bg-[#7C3AED]"
-            >
-              Создать комнату
-            </Button>
-          </Card>
-
-          <Card className="bg-[#1e293b] border-2 border-[#334155] p-4">
-            <h3 className="text-lg font-bold text-white mb-3 flex items-center gap-2">
-              <Icon name="Trophy" size={20} className="text-yellow-500" />
-              Таблица лидеров
-            </h3>
-            <ScrollArea className="h-[300px]">
-              <div className="space-y-2">
-                {leaderboard.map((player, idx) => (
-                  <div
-                    key={player.telegram_id}
-                    className={`flex items-center gap-3 p-3 rounded-lg ${
-                      player.telegram_id === user.telegram_id
-                        ? 'bg-[#0EA5E9]/20 border-2 border-[#0EA5E9]'
-                        : 'bg-[#334155]'
-                    }`}
-                  >
-                    <div className={`text-2xl font-bold ${
-                      idx === 0 ? 'text-yellow-500' :
-                      idx === 1 ? 'text-gray-300' :
-                      idx === 2 ? 'text-orange-600' :
-                      'text-gray-400'
-                    }`}>
-                      #{player.rank}
-                    </div>
-                    <div className="text-3xl">{player.avatar_emoji}</div>
-                    <div className="flex-1">
-                      <div className="font-semibold text-white">{player.first_name}</div>
-                      <div className="text-sm text-gray-400">{player.games_played} игр</div>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-xl font-bold text-white">{player.total_score}</div>
-                      <div className="text-xs text-gray-400">баллов</div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </ScrollArea>
-          </Card>
+          {currentRoomId ? (
+            <GameRoom
+              roomId={currentRoomId}
+              currentUserId={user.telegram_id}
+              onLeaveRoom={handleLeaveRoom}
+            />
+          ) : (
+            <RoomsList
+              onJoinRoom={handleJoinRoom}
+              onCreateRoom={() => setShowCreateRoom(true)}
+              currentUserId={user.telegram_id}
+            />
+          )}
         </TabsContent>
 
         <TabsContent value="profile" className="animate-fade-in">
@@ -551,6 +541,45 @@ export default function Index() {
                 </div>
               </div>
             </div>
+          </Card>
+
+          <Card className="bg-[#1e293b] border-2 border-[#334155] p-4 mt-4">
+            <h3 className="text-lg font-bold text-white mb-3 flex items-center gap-2">
+              <Icon name="Trophy" size={20} className="text-yellow-500" />
+              Таблица лидеров
+            </h3>
+            <ScrollArea className="h-[300px]">
+              <div className="space-y-2">
+                {leaderboard.map((player, idx) => (
+                  <div
+                    key={player.telegram_id}
+                    className={`flex items-center gap-3 p-3 rounded-lg ${
+                      player.telegram_id === user.telegram_id
+                        ? 'bg-[#0EA5E9]/20 border-2 border-[#0EA5E9]'
+                        : 'bg-[#334155]'
+                    }`}
+                  >
+                    <div className={`text-2xl font-bold ${
+                      idx === 0 ? 'text-yellow-500' :
+                      idx === 1 ? 'text-gray-300' :
+                      idx === 2 ? 'text-orange-600' :
+                      'text-gray-400'
+                    }`}>
+                      #{player.rank}
+                    </div>
+                    <div className="text-3xl">{player.avatar_emoji}</div>
+                    <div className="flex-1">
+                      <div className="font-semibold text-white">{player.first_name}</div>
+                      <div className="text-sm text-gray-400">{player.games_played} игр</div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-xl font-bold text-white">{player.total_score}</div>
+                      <div className="text-xs text-gray-400">баллов</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </ScrollArea>
           </Card>
         </TabsContent>
       </Tabs>
