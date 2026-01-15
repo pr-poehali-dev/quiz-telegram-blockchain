@@ -1,0 +1,30 @@
+{
+  "tests": [
+    {
+      "name": "Create room",
+      "method": "POST",
+      "body": {
+        "action": "create",
+        "telegram_id": 123456789,
+        "room_name": "Test Room",
+        "payment_type": "ad"
+      },
+      "expectedStatus": 200,
+      "expectedBody": {
+        "room_id": "string",
+        "room_name": "string",
+        "status": "string"
+      },
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Get public rooms list",
+      "method": "GET",
+      "expectedStatus": 200,
+      "expectedBody": {
+        "rooms": "array"
+      },
+      "bodyMatcher": "partial"
+    }
+  ]
+}

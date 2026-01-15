@@ -1,0 +1,32 @@
+{
+  "tests": [
+    {
+      "name": "Create new user",
+      "method": "POST",
+      "body": {
+        "telegram_id": 123456789,
+        "username": "testuser",
+        "first_name": "Test",
+        "last_name": "User"
+      },
+      "expectedStatus": 200,
+      "expectedBody": {
+        "telegram_id": 123456789,
+        "username": "string",
+        "referral_code": "string"
+      },
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Get existing user",
+      "method": "GET",
+      "path": "/?telegram_id=123456789",
+      "expectedStatus": 200,
+      "expectedBody": {
+        "telegram_id": 123456789,
+        "total_score": "number"
+      },
+      "bodyMatcher": "partial"
+    }
+  ]
+}
