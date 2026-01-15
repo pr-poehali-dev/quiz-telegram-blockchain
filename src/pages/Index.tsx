@@ -237,7 +237,7 @@ export default function Index() {
 
   const handleShare = () => {
     if (!user) return;
-    const shareText = `🎮 Я набрал ${user.total_score} баллов в TON Quiz! Попробуй и ты!\n\n👉 Присоединяйся по моей реферальной ссылке и получи +50 баллов!\n\nhttps://t.me/YOUR_BOT_NAME?start=${user.referral_code}`;
+    const shareText = `🎮 Я набрал ${user.total_score} баллов в TON Quiz! Попробуй и ты!\n\n👉 Присоединяйся по моей реферальной ссылке и получи +50 баллов!\n\nhttps://t.me/ton_quiz_game_bot?start=${user.referral_code}`;
     shareToTelegram(shareText);
     hapticFeedback('success');
   };
@@ -575,7 +575,7 @@ export default function Index() {
               <p className="text-sm text-gray-400 mb-2">Ваша реферальная ссылка:</p>
               <div className="flex items-center gap-2">
                 <code className="flex-1 p-2 bg-[#1e293b] rounded text-sm text-[#0EA5E9] overflow-x-auto">
-                  https://t.me/YOUR_BOT_NAME?start={user.referral_code}
+                  https://t.me/ton_quiz_game_bot?start={user.referral_code}
                 </code>
               </div>
             </div>
